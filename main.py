@@ -14,7 +14,10 @@ class InstagramParser:
     def __next__(self) -> Dict:
         try:
             post = next(self.post_iterator)
-            return self._reformat_post(post)
+            if post.typename in ['GraphImage', 'GraphSidecar']:
+                return self._reformat_post(post)
+            else:
+                return self.__next__()
         except StopIteration:
             raise StopIteration
 
@@ -22,24 +25,24 @@ class InstagramParser:
 
         data = []
         for post in self.post_iterator:
-            data.append(self._reformat_post(post))
+            if post.typename in ['GraphImage', 'GraphSidecar']:
+                data.append(self._reformat_post(post))
         return data
 
     def _reformat_post(self, post: Post) -> Dict:
-        if post.typename in ['GraphImage', 'GraphSidecar']:
-            return {
-                'title': post.title,
-                'caption': post.caption,
-                'caption_hashtags': post.caption_hashtags,
-                'media_id': post.mediaid,
-                'owner_id': post.owner_id,
-                'date_utc': post.date_utc,
-                'typename': post.typename,
-                'media_count': post.mediacount,
-                'images': self._get_node_images(post) if post.typename == 'GraphSidecar' else [post.url]
-            }
-        else:
-            return {}
+        return {
+            'title': post.title,
+            'caption': post.caption,
+            'caption_hashtags': post.caption_hashtags,
+            'media_id': post.mediaid,
+            'owner_id': post.owner_id,
+            'date_utc': post.date_utc,
+            'typename': post.typename,
+            'media_count': post.mediacount,
+            'images': self._get_node_images(post) if post.typename == 'GraphSidecar' else [post.url]
+        }
+        # else:
+        #     return {}
 
     @staticmethod
     def _get_node_images(post):
@@ -60,5 +63,5 @@ posts = scrape.get_posts_as_list()
 pprint(posts)
 
 iterator = InstagramParser(username='foxybeauty_salon')
-print(iterator.__next__())
-print(iterator.__next__())
+print(next(iterator))
+print(next(iterator))
